@@ -56,7 +56,7 @@ export default function Dashboard() {
           
           <div className="p-6 bg-white rounded-2xl shadow-[0_0_60px_rgba(181,137,61,0.4)]">
             {/* Aquí generamos el QR que apunta a la futura pantalla de las chicas */}
-            <QRCodeSVG value={`${window.location.origin}/t/${token}`} size={240} />
+            <QRCodeSVG value={` "https://zalam-eo-bqth.vercel.app/"/t/${token}`} size={240} />
           </div>
 
           <div className="flex items-center space-x-3 text-green-500 animate-pulse">
