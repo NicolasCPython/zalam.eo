@@ -1,55 +1,48 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { supabase } from '../../../supabase';
-import { MapPin } from 'lucide-react';
+import { supabase } from '../../supabase';
 
-export default function ViewLocation() {
+export default function TrackingPage() {
   const params = useParams();
-  const token = params?.token as string;
-  const [data, setData] = useState<any>(null);
+  const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) return;
-    const fetchData = async () => {
-      const { data: session } = await supabase.from('sessions').select('*').eq('token', token).single();
-      if (session) setData(session);
+    async function getData() {
+      const { data } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('token', params.token)
+        .single();
+      if (data) setSession(data);
       setLoading(false);
-    };
-    fetchData();
+    }
+    getData();
+  }, [params.token]);
 
-    const channel = supabase.channel('tracking').on('postgres_changes', 
-      { event: 'UPDATE', schema: 'public', table: 'sessions', filter: "token=eq." + token }, 
-      (payload) => { setData(payload.new); }
-    ).subscribe();
+  if (loading) return <div className="min-h-screen bg-black text-white flex items-center justify-center">Buscando...</div>;
 
-    return () => { supabase.removeChannel(channel); };
-  }, [token]);
-
-  if (loading) return <div className="min-h-screen bg-black flex items-center justify-center text-amber-600">Buscando...</div>;
-  if (!data || !data.active) return <div className="min-h-screen bg-black flex items-center justify-center text-white p-6 text-center">"El arte se ha terminado por hoy." 🍸</div>;
-
-  const mapUrl = "https://www.google.com/maps?q=" + data.lat + "," + data.lng;
+  if (!session || !session.active) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6 text-center">
+        <h2 className="text-[#b5893d] italic text-2xl">El arte se ha terminado por hoy. 🍸</h2>
+      </div>
+    );
+  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white p-6 text-center">
-      <div className="space-y-8 w-full max-w-md">
-        <h2 className="text-3xl font-serif italic text-amber-600">Aquí anda el zalamero...</h2>
-        <div className="relative w-full h-64 bg-zinc-900 rounded-3xl flex items-center justify-center">
-          <MapPin size={48} className="text-amber-600 animate-bounce" />
-        </div>
-        <div className="space-y-4">
-          <p className="text-lg">"Estamos con una copa bonita. Vente." 😌🍸</p>
-          <a 
-            href={mapUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block w-full py-5 bg-amber-600 text-black font-bold rounded-full"
-          >
-            VER EN GOOGLE MAPS
-          </a>
-        </div>
+      <h2 className="text-2xl italic text-[#b5893d] mb-8">Has encontrado al zalamero</h2>
+      <div className="bg-[#1a1a1a] p-8 rounded-3xl border border-[#b5893d]/20">
+        <p className="text-gray-500 mb-4 tracking-widest uppercase text-xs">Ubicación en vivo</p>
+        <a 
+          href={`https://www.google.com/maps?q=${session.lat},${session.lng}`}
+          target="_blank"
+          className="inline-block px-8 py-4 bg-[#b5893d] text-black font-bold rounded-full"
+        >
+          VER EN MAPA 📍
+        </a>
       </div>
     </main>
   );
