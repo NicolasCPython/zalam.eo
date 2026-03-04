@@ -1,17 +1,19 @@
 'use client';
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { supabase } from '../../../supabase';
 import { MapPin } from 'lucide-react';
 
-export default function ViewLocation({ params }: { params: Promise<{ token: string }> }) {
-  // Esto es lo que pide Next.js 15+ para leer el token
-  const resolvedParams = use(params);
-  const token = resolvedParams.token;
+export default function ViewLocation() {
+  const params = useParams();
+  const token = params?.token as string;
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!token) return;
+
     const fetchData = async () => {
       const { data: session } = await supabase
         .from('sessions')
@@ -26,7 +28,7 @@ export default function ViewLocation({ params }: { params: Promise<{ token: stri
     fetchData();
 
     const channel = supabase
-      .channel('realtime-location')
+      .channel(`realtime-${token}`)
       .on('postgres_changes', { 
         event: 'UPDATE', 
         schema: 'public', 
@@ -40,7 +42,7 @@ export default function ViewLocation({ params }: { params: Promise<{ token: stri
     return () => { supabase.removeChannel(channel); };
   }, [token]);
 
-  if (loading) return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-[#b5893d]">Buscando al zalamero...</div>;
+  if (loading) return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-[#b5893d] font-serif italic">Buscando al zalamero...</div>;
   
   if (!data || !data.active) return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white p-6 text-center font-serif italic">"El arte se ha terminado por hoy. Mañana más." 🍸</div>;
 
@@ -60,12 +62,9 @@ export default function ViewLocation({ params }: { params: Promise<{ token: stri
           <a 
             href={`https://www.google.com/maps/search/?api=1&query=${data.lat},${data.lng}`}
             target="_blank"
+            rel="noopener noreferrer"
             className="inline-block w-full py-5 bg-[#b5893d] text-black font-bold rounded-full shadow-lg"
           >
             VER EN GOOGLE MAPS
           </a>
         </div>
-      </div>
-    </main>
-  );
-}
