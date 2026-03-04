@@ -21,50 +21,46 @@ export default function Dashboard() {
       setActive(true);
       startTracking(newToken);
     } else {
-      alert("Error al conectar con el arte. Revisa Supabase.");
+      alert("Error al conectar con el arte.");
     }
   };
 
-  const startTracking = (token: string) => {
+  const startTracking = (tokenActual: string) => {
     navigator.geolocation.watchPosition(
       async (pos) => {
         await supabase.from('sessions')
           .update({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-          .eq('token', token);
+          .eq('token', tokenActual);
       },
-      (err) => console.error("Error de GPS:", err),
+      (err) => console.error(err),
       { enableHighAccuracy: true }
     );
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0a] text-[#f5f5f7] p-6 text-center">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white p-6 text-center">
       {!active ? (
         <div className="space-y-6">
           <h2 className="text-2xl font-serif italic">¿Listo para que te encuentren?</h2>
           <button
             onClick={startZalameo}
-            className="px-10 py-5 bg-[#b5893d] text-black font-bold rounded-full shadow-lg hover:scale-105 transition-transform"
+            className="px-10 py-5 bg-amber-600 text-black font-bold rounded-full"
           >
             GENERAR QR CON PELIGRO 🍸
           </button>
         </div>
       ) : (
         <div className="flex flex-col items-center space-y-8">
-          <h2 className="text-2xl font-serif italic text-[#b5893d]">Este QR tiene arte... Enséñalo.</h2>
-          <div className="p-6 bg-white rounded-2xl shadow-xl">
-            <QRCodeSVG value={`https://zalam-eo-bqth.vercel.app/t/${token}`} size={240} />
-          </div>
-          <div className="flex items-center space-x-3 text-green-500 animate-pulse">
-            <div className="w-2 h-2 bg-green-500 rounded-full" />
-            <span className="text-sm font-bold uppercase tracking-widest">Zalameando en vivo</span>
+          <h2 className="text-2xl font-serif italic text-amber-600">Este QR tiene arte... Enséñalo.</h2>
+          <div className="p-4 bg-white rounded-xl">
+            <QRCodeSVG value={"https://zalam-eo-bqth.vercel.app/t/" + token} size={200} />
           </div>
           <button
             onClick={() => window.location.reload()}
-            className="flex items-center space-x-2 text-red-500/50 hover:text-red-500 transition-colors pt-12"
+            className="flex items-center space-x-2 text-red-500 pt-10"
           >
             <Power size={16} />
-            <span className="text-xs font-bold uppercase tracking-widest">Cortar el arte</span>
+            <span>CORTAR EL ARTE</span>
           </button>
         </div>
       )}
