@@ -47,10 +47,17 @@ export default function VistaZalamera() {
     return () => { supabase.removeChannel(subscription); };
   }, [tokenUrl]);
 
-  const registrarClick = () => {
+  const registrarClick = async () => {
+    // 1. Avisamos a la base de datos (Sin esperar a que responda para que sea instantáneo)
     supabase.rpc('increment_clicks', { t_token: tokenUrl });
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${data.lat},${data.lng}`;
-    window.location.href = mapsUrl;
+    
+    // 2. Preparamos las coordenadas
+    const lat = data.lat;
+    const lng = data.lng;
+    
+    // 3. ¡GAS! Redirigimos al Google Maps real
+    // Usamos este formato que es el más compatible con todos los móviles
+    window.location.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
   };
 
   if (error) return <div className="min-h-screen bg-black text-[#b5893d] flex items-center justify-center p-6 italic font-serif text-xl text-center">Game Over... Nos buscaremos en los bares 🍸</div>;
