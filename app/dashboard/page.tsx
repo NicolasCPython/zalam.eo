@@ -35,9 +35,13 @@ export default function Dashboard() {
 
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const { error } = await supabase.from('sessions').insert([{ 
-        token: newToken, expires_at: expiresAt, active: true,
-        lat: pos.coords.latitude, lng: pos.coords.longitude,
-        message: mensaje, spotify_url: spotifyUrl
+        token: newToken, 
+        expires_at: expiresAt, 
+        active: true,
+        lat: pos.coords.latitude, 
+        lng: pos.coords.longitude,
+        message: mensaje, 
+        spotify_url: spotifyUrl || undefined // <--- ¡EL TRUCO ESTÁ AQUÍ!
       }]);
       if (!error) { setToken(newToken); setActive(true); }
     }, (err) => alert("Sin GPS no hay Zalameo, figura."), { enableHighAccuracy: true });
