@@ -12,30 +12,37 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ views: 0, clicks: 0 });
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Escuchar estadísticas en tiempo real
+  // 1. RECUPERAR SESIÓN AL CARGAR (Para que no se borre al refrescar)
+  useEffect(() => {
+    const savedToken = localStorage.getItem('zalameo_token');
+    if (savedToken) {
+      setToken(savedToken);
+      setActive(true);
+      // Cargamos los stats iniciales de esa sesión
+      const loadStats = async () => {
+        const { data } = await supabase.from('sessions').select('v_views, v_clicks, message, spotify_url').eq('token', savedToken).single();
+        if (data) {
+          setStats({ views: data.v_views || 0, clicks: data.v_clicks || 0 });
+          setMensaje(data.message);
+          setSpotifyUrl(data.spotify_url || '');
+        }
+      };
+      loadStats();
+    }
+  }, []);
+
+  // 2. ESCUCHAR CAMBIOS EN TIEMPO REAL
   useEffect(() => {
     if (!token) return;
-
-    const channel = supabase
-      .channel('schema-db-changes')
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'sessions', 
-        filter: `token=eq.${token}` 
-      }, (payload) => {
-        // Cuando alguien entra (UPDATE), actualizamos los números en tu pantalla
-        setStats({ 
-          views: payload.new.v_views || 0, 
-          clicks: payload.new.v_clicks || 0 
-        });
+    const channel = supabase.channel('stats-realtime')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `token=eq.${token}` }, (payload) => {
+        setStats({ views: payload.new.v_views || 0, clicks: payload.new.v_clicks || 0 });
       })
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [token]);
 
-  // FUNCIÓN 1: Generar el QR inicial
+  // FUNCIÓN: Generar el QR inicial
   const startZalameo = async () => {
     const newToken = Math.random().toString(36).substring(2, 8).toUpperCase();
     const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
@@ -54,13 +61,12 @@ export default function Dashboard() {
       if (!error) { 
         setToken(newToken); 
         setActive(true); 
-      } else {
-        alert("Error al conectar con el arte. Revisa Supabase.");
+        localStorage.setItem('zalameo_token', newToken); // <--- GUARDAMOS EL SECRETO
       }
-    }, (err) => alert("Sin GPS no hay Zalameo, figura. Actívalo."), { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+    }, (err) => alert("Activa el GPS, figura."), { enableHighAccuracy: true });
   };
 
-  // FUNCIÓN 2: Actualizar el estado a mitad de la noche
+  // FUNCIÓN: Actualizar posición/mensaje
   const actualizarUbicacion = () => {
     setIsUpdating(true);
     navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -70,27 +76,16 @@ export default function Dashboard() {
         message: mensaje, 
         spotify_url: spotifyUrl || undefined 
       }).eq('token', token);
-      
       setIsUpdating(false);
-      alert("📍 Posición, música y mensaje actualizados con arte.");
-    }, (err) => {
-      setIsUpdating(false);
-      alert("No se pudo obtener el GPS.");
-    }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+      alert("📍 Actualizado.");
+    }, (err) => setIsUpdating(false), { enableHighAccuracy: true });
   };
 
-  // FUNCIÓN 3: Apagar la luz e irnos a casa (AHORA CON CHIVATO)
+  // FUNCIÓN: Cortar el arte (Y limpiar memoria)
   const cortarArte = async () => {
-    // Intentamos apagar la sesión en la base de datos
-    const { error } = await supabase.from('sessions').update({ active: false }).eq('token', token);
-    
-    if (error) {
-      // Si el portero de Supabase nos bloquea, la pantalla nos grita el error
-      alert(`Fallo al cortar: ${error.message}`);
-    } else {
-      // Si va bien, recarga la página para volver al inicio
-      window.location.reload();
-    }
+    await supabase.from('sessions').update({ active: false }).eq('token', token);
+    localStorage.removeItem('zalameo_token'); // <--- BORRAMOS LA MEMORIA
+    window.location.reload();
   };
 
   return (
@@ -98,93 +93,40 @@ export default function Dashboard() {
       {!active ? (
         <div className="space-y-4 w-full max-w-sm">
           <h2 className="text-2xl font-serif italic text-[#b5893d] mb-6">¿Dónde andas, criatura?</h2>
-          
-          <input 
-            type="text" 
-            value={mensaje} 
-            onChange={(e) => setMensaje(e.target.value)} 
-            placeholder="Frase zalamera..." 
-            className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#b5893d]/30 rounded-xl text-white focus:outline-none focus:border-[#b5893d] transition-colors" 
-            maxLength={40}
-          />
-          
-          <div className="flex items-center bg-[#1a1a1a] border border-[#b5893d]/30 rounded-xl px-4 py-3 focus-within:border-[#b5893d] transition-colors">
+          <input type="text" value={mensaje} onChange={(e) => setMensaje(e.target.value)} placeholder="Frase zalamera..." className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#b5893d]/30 rounded-xl text-white focus:outline-none" maxLength={40}/>
+          <div className="flex items-center bg-[#1a1a1a] border border-[#b5893d]/30 rounded-xl px-4 py-3">
             <Music size={18} className="text-[#b5893d] mr-3" />
-            <input 
-              type="text" 
-              value={spotifyUrl} 
-              onChange={(e) => setSpotifyUrl(e.target.value)} 
-              placeholder="Link de Spotify (opcional)..." 
-              className="w-full bg-transparent text-white focus:outline-none text-sm" 
-            />
+            <input type="text" value={spotifyUrl} onChange={(e) => setSpotifyUrl(e.target.value)} placeholder="Link de Spotify..." className="w-full bg-transparent text-white focus:outline-none text-sm" />
           </div>
-
-          <button 
-            onClick={startZalameo} 
-            className="w-full py-4 mt-4 bg-[#b5893d] text-black font-bold rounded-full shadow-[0_0_40px_rgba(181,137,61,0.2)] hover:scale-105 transition-transform"
-          >
-            GENERAR PELIGRO 🍸
-          </button>
+          <button onClick={startZalameo} className="w-full py-4 mt-4 bg-[#b5893d] text-black font-bold rounded-full shadow-lg hover:scale-105 transition-transform">GENERAR PELIGRO 🍸</button>
         </div>
       ) : (
         <div className="flex flex-col items-center space-y-6 w-full max-w-sm">
-          <h2 className="text-xl font-serif italic text-[#b5893d]">Este QR tiene arte... Enséñalo.</h2>
-          
-          <div className="p-4 bg-white rounded-2xl shadow-[0_0_50px_rgba(181,137,61,0.3)]">
+          <h2 className="text-xl font-serif italic text-[#b5893d]">Sesión Activa</h2>
+          <div className="p-4 bg-white rounded-2xl shadow-lg">
             <QRCodeSVG value={`https://zalam-eo-bqth.vercel.app/t/${token}`} size={200} />
           </div>
-          
-          {/* PANEL DE ANALÍTICAS PARA EL JEFE */}
           <div className="grid grid-cols-2 gap-4 w-full">
             <div className="bg-[#1a1a1a] p-4 rounded-xl border border-white/5">
-              <div className="flex items-center justify-center text-[#b5893d] mb-1">
-                <Eye size={16} className="mr-2"/> 
-                <span className="text-xs uppercase font-bold">Vistas</span>
-              </div>
-              <span className="text-2xl font-black">{stats.views}</span>
+              <Eye size={16} className="text-[#b5893d] mx-auto mb-1"/> 
+              <span className="text-2xl font-black block">{stats.views}</span>
+              <span className="text-[10px] uppercase opacity-50">Vistas</span>
             </div>
             <div className="bg-[#1a1a1a] p-4 rounded-xl border border-white/5">
-              <div className="flex items-center justify-center text-green-500 mb-1">
-                <MousePointer2 size={16} className="mr-2"/> 
-                <span className="text-xs uppercase font-bold">Clicks</span>
-              </div>
-              <span className="text-2xl font-black">{stats.clicks}</span>
+              <MousePointer2 size={16} className="text-green-500 mx-auto mb-1"/> 
+              <span className="text-2xl font-black block">{stats.clicks}</span>
+              <span className="text-[10px] uppercase opacity-50">Clicks</span>
             </div>
           </div>
-
-          {/* PANEL DE CONTROL MANUAL A MITAD DE NOCHE */}
           <div className="w-full bg-[#1a1a1a] p-4 rounded-2xl border border-white/10 space-y-3">
-            <input 
-              type="text" 
-              value={mensaje} 
-              onChange={(e) => setMensaje(e.target.value)} 
-              className="w-full px-4 py-2 bg-black border border-[#b5893d]/30 rounded-lg text-sm text-white focus:outline-none focus:border-[#b5893d]" 
-              placeholder="Nuevo mensaje..."
-            />
-            <input 
-              type="text" 
-              value={spotifyUrl} 
-              onChange={(e) => setSpotifyUrl(e.target.value)} 
-              className="w-full px-4 py-2 bg-black border border-[#b5893d]/30 rounded-lg text-sm text-white focus:outline-none focus:border-[#b5893d]" 
-              placeholder="Nuevo link de Spotify..."
-            />
-            <button 
-              onClick={actualizarUbicacion} 
-              disabled={isUpdating} 
-              className="w-full py-3 bg-[#2a2a2a] text-[#b5893d] font-bold rounded-lg flex items-center justify-center space-x-2 border border-[#b5893d]/40 active:bg-[#b5893d] active:text-black transition-colors"
-            >
+            <input type="text" value={mensaje} onChange={(e) => setMensaje(e.target.value)} className="w-full px-4 py-2 bg-black border border-[#b5893d]/30 rounded-lg text-sm text-white" />
+            <button onClick={actualizarUbicacion} disabled={isUpdating} className="w-full py-3 bg-[#2a2a2a] text-[#b5893d] font-bold rounded-lg flex items-center justify-center space-x-2 border border-[#b5893d]/40">
               <Send size={18} /> 
-              <span>{isUpdating ? "Actualizando..." : "📍 ACTUALIZAR ESTADO"}</span>
+              <span>{isUpdating ? "..." : "📍 ACTUALIZAR"}</span>
             </button>
           </div>
-
-          {/* BOTÓN DE CORTAR EL ARTE */}
-          <button 
-            onClick={cortarArte} 
-            className="flex items-center space-x-2 text-red-500/50 hover:text-red-500 transition-colors pt-2"
-          >
-            <Power size={16} /> 
-            <span className="text-xs font-bold uppercase tracking-widest">Cortar el arte</span>
+          <button onClick={cortarArte} className="text-red-500/50 hover:text-red-500 text-xs font-bold uppercase tracking-widest pt-2 flex items-center space-x-2">
+            <Power size={14}/> <span>Cortar el arte</span>
           </button>
         </div>
       )}
