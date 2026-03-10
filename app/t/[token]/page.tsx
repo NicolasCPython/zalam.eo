@@ -96,11 +96,21 @@ export default function VistaZalamera() {
       <button onClick={registrarClick} className="px-10 py-5 bg-[#b5893d] text-black font-bold rounded-full shadow-lg active:scale-95 transition-transform w-full max-w-xs">
         LLEVARME CON ESTILO
       </button>
-
+    
+      {/* EL BLINDAJE: PROMO DE LOS PUÑALES DE MARTÍN */}
       <div className="mt-12 pt-6 border-t border-[#b5893d]/20 w-full max-w-xs">
-        <p className="text-gray-500 text-xs italic mb-2 uppercase tracking-widest">🎵 Banda sonora oficial:</p>
-        <a href="TU_LINK_INSTA" target="_blank" className="text-[#b5893d] font-bold text-lg">TU_GRUPO</a>
+        <p className="text-gray-500 text-[10px] italic mb-2 uppercase tracking-[0.3em]">
+          🎵 Banda sonora oficial:
+        </p>
+        <a 
+          href="https://www.instagram.com/lospunalesdemartin" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-[#b5893d] font-serif italic text-2xl hover:text-white transition-colors duration-300"
+        >
+          Los Puñales de Martín 🎸
+        </a>
+        <p className="text-[9px] text-gray-600 mt-2 uppercase tracking-widest">
+          Valencia • Directo Clandestino
+        </p>
       </div>
-    </main>
-  );
-}
