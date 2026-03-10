@@ -74,7 +74,7 @@ export default function Dashboard() {
         spotify_url: spotifyUrl || undefined 
       }).eq('token', token);
       setIsUpdating(false);
-      alert("📍 Todo actualizado: Sitio, mensaje y música.");
+      alert("📍 Todo actualizado.");
     }, (err) => {
       setIsUpdating(false);
       alert("Error con el GPS.");
@@ -110,12 +110,12 @@ export default function Dashboard() {
             <div className="bg-[#1a1a1a] p-4 rounded-xl border border-white/5">
               <Eye size={16} className="text-[#b5893d] mx-auto mb-1"/> 
               <span className="text-2xl font-black block">{stats.views}</span>
-              <span className="text-[10px] uppercase opacity-50">Vistas</span>
+              <span className="text-[10px] uppercase opacity-50 text-center">Vistas</span>
             </div>
             <div className="bg-[#1a1a1a] p-4 rounded-xl border border-white/5">
               <MousePointer2 size={16} className="text-green-500 mx-auto mb-1"/> 
               <span className="text-2xl font-black block">{stats.clicks}</span>
-              <span className="text-[10px] uppercase opacity-50">Clicks</span>
+              <span className="text-[10px] uppercase opacity-50 text-center">Clicks</span>
             </div>
           </div>
 
@@ -125,7 +125,7 @@ export default function Dashboard() {
               type="text" 
               value={mensaje} 
               onChange={(e) => setMensaje(e.target.value)} 
-              className="w-full px-4 py-2 bg-black border border-[#b5893d]/30 rounded-lg text-sm text-white focus:outline-none focus:border-[#b5893d]" 
+              className="w-full px-4 py-2 bg-black border border-[#b5893d]/30 rounded-lg text-sm text-white focus:outline-none" 
               placeholder="Nuevo mensaje..."
             />
             <div className="flex items-center bg-black border border-[#b5893d]/30 rounded-lg px-3 py-2">
@@ -138,7 +138,7 @@ export default function Dashboard() {
                 placeholder="Nuevo link Spotify..."
               />
             </div>
-            <button onClick={actualizarUbicacion} disabled={isUpdating} className="w-full py-3 bg-[#b5893d] text-black font-bold rounded-lg flex items-center justify-center space-x-2 active:scale-95 transition-transform">
+            <button onClick={actualizarUbicacion} disabled={isUpdating} className="w-full py-3 bg-[#b5893d] text-black font-bold rounded-lg flex items-center justify-center space-x-2">
               <Send size={18} /> 
               <span>{isUpdating ? "..." : "📍 ACTUALIZAR"}</span>
             </button>
@@ -149,9 +149,6 @@ export default function Dashboard() {
           </button>
         </div>
       )}
-    </main>
-  );
-}
     </main>
   );
 }
