@@ -113,12 +113,12 @@ export default function VistaZalamera() {
       <div className="mt-12 pt-6 border-t border-[#b5893d]/20 w-full max-w-xs">
         <p className="text-gray-500 text-xs italic mb-2 uppercase tracking-widest">🎵 Banda sonora oficial:</p>
         <a 
-          href="TU_LINK_DE_INSTAGRAM_AQUI" 
+          href="https://www.instagram.com/lospunyalesdemartin/" 
           target="_blank" 
           rel="noopener noreferrer"
           className="text-[#b5893d] font-bold text-lg hover:text-white transition-colors"
         >
-          NOMBRE_DEL_GRUPO_AQUI
+          'LOS PUÑALES DE MARTÍN'
         </a>
       </div>
     </main>
