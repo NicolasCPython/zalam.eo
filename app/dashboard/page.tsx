@@ -12,13 +12,12 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ views: 0, clicks: 0 });
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // 1. RECUPERAR SESIÓN AL CARGAR (Para que no se borre al refrescar)
+  // 1. RECUPERAR SESIÓN AL CARGAR
   useEffect(() => {
     const savedToken = localStorage.getItem('zalameo_token');
     if (savedToken) {
       setToken(savedToken);
       setActive(true);
-      // Cargamos los stats iniciales de esa sesión
       const loadStats = async () => {
         const { data } = await supabase.from('sessions').select('v_views, v_clicks, message, spotify_url').eq('token', savedToken).single();
         if (data) {
@@ -42,7 +41,6 @@ export default function Dashboard() {
     return () => { supabase.removeChannel(channel); };
   }, [token]);
 
-  // FUNCIÓN: Generar el QR inicial
   const startZalameo = async () => {
     const newToken = Math.random().toString(36).substring(2, 8).toUpperCase();
     const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
@@ -61,12 +59,11 @@ export default function Dashboard() {
       if (!error) { 
         setToken(newToken); 
         setActive(true); 
-        localStorage.setItem('zalameo_token', newToken); // <--- GUARDAMOS EL SECRETO
+        localStorage.setItem('zalameo_token', newToken);
       }
     }, (err) => alert("Activa el GPS, figura."), { enableHighAccuracy: true });
   };
 
-  // FUNCIÓN: Actualizar posición/mensaje
   const actualizarUbicacion = () => {
     setIsUpdating(true);
     navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -77,14 +74,16 @@ export default function Dashboard() {
         spotify_url: spotifyUrl || undefined 
       }).eq('token', token);
       setIsUpdating(false);
-      alert("📍 Actualizado.");
-    }, (err) => setIsUpdating(false), { enableHighAccuracy: true });
+      alert("📍 Todo actualizado: Sitio, mensaje y música.");
+    }, (err) => {
+      setIsUpdating(false);
+      alert("Error con el GPS.");
+    }, { enableHighAccuracy: true });
   };
 
-  // FUNCIÓN: Cortar el arte (Y limpiar memoria)
   const cortarArte = async () => {
     await supabase.from('sessions').update({ active: false }).eq('token', token);
-    localStorage.removeItem('zalameo_token'); // <--- BORRAMOS LA MEMORIA
+    localStorage.removeItem('zalameo_token');
     window.location.reload();
   };
 
@@ -106,6 +105,7 @@ export default function Dashboard() {
           <div className="p-4 bg-white rounded-2xl shadow-lg">
             <QRCodeSVG value={`https://zalam-eo-bqth.vercel.app/t/${token}`} size={200} />
           </div>
+
           <div className="grid grid-cols-2 gap-4 w-full">
             <div className="bg-[#1a1a1a] p-4 rounded-xl border border-white/5">
               <Eye size={16} className="text-[#b5893d] mx-auto mb-1"/> 
@@ -118,18 +118,40 @@ export default function Dashboard() {
               <span className="text-[10px] uppercase opacity-50">Clicks</span>
             </div>
           </div>
+
           <div className="w-full bg-[#1a1a1a] p-4 rounded-2xl border border-white/10 space-y-3">
-            <input type="text" value={mensaje} onChange={(e) => setMensaje(e.target.value)} className="w-full px-4 py-2 bg-black border border-[#b5893d]/30 rounded-lg text-sm text-white" />
-            <button onClick={actualizarUbicacion} disabled={isUpdating} className="w-full py-3 bg-[#2a2a2a] text-[#b5893d] font-bold rounded-lg flex items-center justify-center space-x-2 border border-[#b5893d]/40">
+            <p className="text-[10px] uppercase tracking-widest text-[#b5893d]/60 text-left px-1">Actualizar estado:</p>
+            <input 
+              type="text" 
+              value={mensaje} 
+              onChange={(e) => setMensaje(e.target.value)} 
+              className="w-full px-4 py-2 bg-black border border-[#b5893d]/30 rounded-lg text-sm text-white focus:outline-none focus:border-[#b5893d]" 
+              placeholder="Nuevo mensaje..."
+            />
+            <div className="flex items-center bg-black border border-[#b5893d]/30 rounded-lg px-3 py-2">
+              <Music size={14} className="text-[#b5893d] mr-2" />
+              <input 
+                type="text" 
+                value={spotifyUrl} 
+                onChange={(e) => setSpotifyUrl(e.target.value)} 
+                className="w-full bg-transparent text-xs text-white focus:outline-none" 
+                placeholder="Nuevo link Spotify..."
+              />
+            </div>
+            <button onClick={actualizarUbicacion} disabled={isUpdating} className="w-full py-3 bg-[#b5893d] text-black font-bold rounded-lg flex items-center justify-center space-x-2 active:scale-95 transition-transform">
               <Send size={18} /> 
               <span>{isUpdating ? "..." : "📍 ACTUALIZAR"}</span>
             </button>
           </div>
+
           <button onClick={cortarArte} className="text-red-500/50 hover:text-red-500 text-xs font-bold uppercase tracking-widest pt-2 flex items-center space-x-2">
             <Power size={14}/> <span>Cortar el arte</span>
           </button>
         </div>
       )}
+    </main>
+  );
+}
     </main>
   );
 }

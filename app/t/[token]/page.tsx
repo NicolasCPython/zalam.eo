@@ -58,7 +58,7 @@ export default function VistaZalamera() {
   if (error) {
     return (
       <div className="min-h-screen bg-black text-[#b5893d] flex items-center justify-center p-6 italic font-serif text-xl text-center">
-        El telón se ha cerrado. Mañana más. 🍸
+        Game Over... Nos seguiremos buscando por los bares 🍸
       </div>
     );
   }
