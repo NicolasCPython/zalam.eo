@@ -12,9 +12,10 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ views: 0, clicks: 0 });
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Escuchar estadísticas en tiempo real (Modo Jefe)
+  // Escuchar estadísticas en tiempo real
   useEffect(() => {
     if (!token) return;
+
     const channel = supabase
       .channel('schema-db-changes')
       .on('postgres_changes', { 
@@ -23,9 +24,14 @@ export default function Dashboard() {
         table: 'sessions', 
         filter: `token=eq.${token}` 
       }, (payload) => {
-        setStats({ views: payload.new.v_views || 0, clicks: payload.new.v_clicks || 0 });
+        // Cuando alguien entra (UPDATE), actualizamos los números en tu pantalla
+        setStats({ 
+          views: payload.new.v_views || 0, 
+          clicks: payload.new.v_clicks || 0 
+        });
       })
       .subscribe();
+
     return () => { supabase.removeChannel(channel); };
   }, [token]);
 
