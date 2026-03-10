@@ -1,34 +1,58 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../supabase';
-import { MapPin, Music } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 
 export default function VistaZalamera({ params }: { params: { token: string } }) {
   const [data, setData] = useState<any>(null);
-  const [error, setError] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string>("");
 
   useEffect(() => {
     const load = async () => {
-      // Sumar visita de forma anónima
-      await supabase.rpc('increment_views', { t_token: params.token });
-      
-      const { data: res } = await supabase.from('sessions').select('*').eq('token', params.token).single();
-      if (res && res.active) setData(res);
-      else setError(true);
+      // 1. Comprobamos si la carpeta está bien nombrada
+      if (!params.token) {
+        setErrorMsg("Fallo 1: params.token es UNDEFINED. ¿Llamaste a la carpeta [token] con los corchetes puestos?");
+        return;
+      }
+
+      // 2. Le preguntamos a Supabase qué pasa realmente
+      const { data: res, error: fetchError } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('token', params.token)
+        .single();
+
+      if (fetchError) {
+        setErrorMsg(`Fallo 2 (Supabase dice): ${fetchError.message} (Código: ${fetchError.code})`);
+        return;
+      }
+
+      // 3. Comprobamos si la sesión está apagada o no
+      if (res && res.active) {
+        setData(res);
+      } else {
+        setErrorMsg("Fallo 3: La fila existe, pero la columna 'active' está en false.");
+      }
     };
+    
     load();
   }, [params.token]);
 
-  const registrarClick = async () => {
-    await supabase.rpc('increment_clicks', { t_token: params.token });
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${data.lat},${data.lng}`;
-    window.open(mapsUrl, '_blank');
-  };
+  // PANTALLA DE ERROR CHIVATA
+  if (errorMsg) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-[#b5893d] flex flex-col items-center justify-center p-6 text-center">
+        <h2 className="text-2xl font-serif italic mb-6">Algo falla, figura... 🛑</h2>
+        <div className="text-sm font-mono text-red-400 bg-red-900/20 p-6 rounded-xl border border-red-500/30 break-all w-full max-w-sm">
+          <p className="font-bold text-white mb-2">MOTIVO EXACTO DEL ERROR:</p>
+          <p>{errorMsg}</p>
+          <p className="mt-4 text-gray-500">Token buscado: {params.token || "Ninguno"}</p>
+        </div>
+      </div>
+    );
+  }
 
-  if (error) return <div className="min-h-screen bg-black text-[#b5893d] flex items-center justify-center p-10 italic">El zalamero se ha esfumado... 🍸</div>;
   if (!data) return <div className="min-h-screen bg-black text-[#b5893d] flex items-center justify-center animate-pulse">Buscando el rastro...</div>;
-
-  const spotifyId = data.spotify_url?.split('track/')[1]?.split('?')[0];
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center p-6 text-center">
@@ -43,18 +67,9 @@ export default function VistaZalamera({ params }: { params: { token: string } })
         "{data.message}"
       </div>
 
-      {spotifyId && (
-        <iframe src={`https://open.spotify.com/embed/track/${spotifyId}`} width="100%" height="80" frameBorder="0" allow="encrypted-media" className="max-w-xs mb-8 rounded-xl"></iframe>
-      )}
-
-      <button onClick={registrarClick} className="px-10 py-5 bg-[#b5893d] text-black font-bold rounded-full shadow-lg active:scale-95 transition-transform">
+      <button onClick={() => window.open(`http://maps.google.com/maps?q=${data.lat},${data.lng}`, '_blank')} className="px-10 py-5 bg-[#b5893d] text-black font-bold rounded-full shadow-lg active:scale-95 transition-transform">
         LLEVARME CON ESTILO
       </button>
-
-      <div className="mt-12 pt-6 border-t border-white/5 w-full max-w-xs">
-        <p className="text-[10px] text-gray-500 uppercase tracking-[0.3em] mb-2">Banda sonora oficial:</p>
-        <a href="TU_LINK_INSTAGRAM_GRUPO" target="_blank" className="text-[#b5893d] font-bold hover:underline">NOMBRE_DEL_GRUPO 🎸</a>
-      </div>
     </main>
   );
 }
