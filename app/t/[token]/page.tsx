@@ -53,7 +53,7 @@ export default function VistaZalamera() {
     window.location.href = mapsUrl;
   };
 
-  if (error) return <div className="min-h-screen bg-black text-[#b5893d] flex items-center justify-center p-6 italic font-serif text-xl text-center">El telón se ha cerrado. Mañana más. 🍸</div>;
+  if (error) return <div className="min-h-screen bg-black text-[#b5893d] flex items-center justify-center p-6 italic font-serif text-xl text-center">Game Over... Nos buscaremos en los bares 🍸</div>;
   if (!data) return <div className="min-h-screen bg-black text-[#b5893d] flex items-center justify-center animate-pulse tracking-widest uppercase text-sm font-bold">Buscando el rastro...</div>;
 
   let spotifyEmbedUrl = null;
