@@ -16,9 +16,7 @@ export default function VistaZalamera() {
     if (!tokenUrl) return;
 
     const load = async () => {
-      // Sumar visita
       await supabase.rpc('increment_views', { t_token: tokenUrl });
-      
       const { data: res } = await supabase.from('sessions').select('*').eq('token', tokenUrl).single();
       
       if (res && res.active) {
@@ -51,14 +49,11 @@ export default function VistaZalamera() {
 
   const registrarClick = () => {
     supabase.rpc('increment_clicks', { t_token: tokenUrl });
-    // URL LIMPIA DE GOOGLE MAPS
-    const lat = data.lat;
-    const lng = data.lng;
-    const label = encodeURIComponent(data.message || "Zalameo");
-    window.location.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${data.lat},${data.lng}`;
+    window.location.href = mapsUrl;
   };
 
-  if (error) return <div className="min-h-screen bg-black text-[#b5893d] flex items-center justify-center p-6 italic font-serif">El zalamero se ha esfumado... 🍸</div>;
+  if (error) return <div className="min-h-screen bg-black text-[#b5893d] flex items-center justify-center p-6 italic font-serif text-xl text-center">El telón se ha cerrado. Mañana más. 🍸</div>;
   if (!data) return <div className="min-h-screen bg-black text-[#b5893d] flex items-center justify-center animate-pulse tracking-widest uppercase text-sm font-bold">Buscando el rastro...</div>;
 
   let spotifyEmbedUrl = null;
@@ -86,17 +81,16 @@ export default function VistaZalamera() {
             src={spotifyEmbedUrl} 
             width="100%" 
             height="80" 
-            frameBorder="0" 
             allow="encrypted-media"
-            className="rounded-xl"
+            className="rounded-xl shadow-lg border-0"
           ></iframe>
         </div>
       )}
 
-      <button onClick={registrarClick} className="px-10 py-5 bg-[#b5893d] text-black font-bold rounded-full shadow-lg active:scale-95 transition-transform w-full max-w-xs">
+      <button onClick={registrarClick} className="px-10 py-5 bg-[#b5893d] text-black font-bold rounded-full shadow-lg active:scale-95 transition-transform w-full max-w-xs uppercase tracking-widest text-sm">
         LLEVARME CON ESTILO
       </button>
-    
+
       {/* EL BLINDAJE: PROMO DE LOS PUÑALES DE MARTÍN */}
       <div className="mt-12 pt-6 border-t border-[#b5893d]/20 w-full max-w-xs">
         <p className="text-gray-500 text-[10px] italic mb-2 uppercase tracking-[0.3em]">
@@ -106,7 +100,7 @@ export default function VistaZalamera() {
           href="https://www.instagram.com/lospunalesdemartin" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="text-[#b5893d] font-serif italic text-2xl hover:text-white transition-colors duration-300"
+          className="text-[#b5893d] font-serif italic text-2xl hover:text-white transition-colors duration-300 block"
         >
           Los Puñales de Martín 🎸
         </a>
@@ -114,3 +108,6 @@ export default function VistaZalamera() {
           Valencia • Directo Clandestino
         </p>
       </div>
+    </main>
+  );
+}
