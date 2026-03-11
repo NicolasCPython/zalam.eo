@@ -114,7 +114,7 @@ export default function VistaZalamera() {
           🎵 Banda sonora oficial:
         </p>
         <a 
-          href="https://www.instagram.com/lospunalesdemartin" 
+          href="https://www.instagram.com/lospunyalesdemartin/" 
           target="_blank" 
           rel="noopener noreferrer"
           className="text-[#b5893d] font-serif italic text-2xl hover:text-white transition-colors duration-300 block"
